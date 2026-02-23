@@ -10,23 +10,52 @@ from pathlib import Path
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
-CONTENT_DIR = PROJECT_ROOT / "content" / "scenarios" / "00_la_estrella_del_terror"
-OUTPUT_FILE = PROJECT_ROOT / "docs" / "scenarios" / "00_la_estrella_del_terror.html"
+SCENARIOS_DIR = PROJECT_ROOT / "content" / "scenarios"
+OUTPUT_DIR = PROJECT_ROOT / "docs" / "scenarios"
+
+# Scenario list
+SCENARIOS = [
+    {
+        'id': '00_la_estrella_del_terror',
+        'title': 'La Estrella del Terror',
+        'number': '00'
+    },
+    {
+        'id': '01_operacion_krakatoa',
+        'title': 'Operación Krakatoa',
+        'number': '01'
+    },
+    {
+        'id': '02_la_cloaca',
+        'title': 'La Cloaca',
+        'number': '02'
+    },
+    {
+        'id': '03_castillos_de_arena',
+        'title': 'Castillos de Arena',
+        'number': '03'
+    },
+    {
+        'id': '04_el_tren_fantasma',
+        'title': 'El Tren Fantasma',
+        'number': '04'
+    }
+]
 
 # HTML Template
 HTML_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Estrella del Terror | Playa del Crimen</title>
+    <title>{title} | Playa del Crimen</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
     <header>
         <div class="container">
             <h1><a href="../index.html" style="color: white;">Playa del Crimen</a></h1>
-            <p class="tagline">Scenario 00: La Estrella del Terror</p>
+            <p class="tagline">Escenario {number}: {title}</p>
         </div>
     </header>
 
@@ -36,7 +65,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <footer>
         <div class="container">
-            <p><a href="../index.html">← Back to Home</a></p>
+            <p><a href="../index.html">← Volver al Inicio</a></p>
         </div>
     </footer>
 </body>
@@ -45,6 +74,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 def read_markdown_file(filepath):
     """Read a Markdown file and return its content."""
+    if not filepath.exists():
+        return ""
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
@@ -52,43 +83,62 @@ def convert_markdown_to_html(md_content):
     """Convert Markdown content to HTML."""
     return markdown.markdown(md_content, extensions=['extra', 'codehilite'])
 
-def build_scenario():
-    """Build the scenario HTML file."""
+def build_scenario(scenario):
+    """Build a scenario HTML file."""
+    scenario_dir = SCENARIOS_DIR / scenario['id']
+    
     # List of files to include in order
     files_to_include = [
-        CONTENT_DIR / "README.md",
-        CONTENT_DIR / "briefing.md",
-        CONTENT_DIR / "team_structure" / "roles.md",
-        CONTENT_DIR / "phases" / "01_reconnaissance.md",
-        CONTENT_DIR / "phases" / "02_attack_surface.md",
-        CONTENT_DIR / "phases" / "03_relationship_mapping.md",
-        CONTENT_DIR / "phases" / "04_risk_exposure.md",
-        CONTENT_DIR / "phases" / "05_lessons_learned.md",
-        CONTENT_DIR / "exercises" / "tabletop_exercise.md",
-        CONTENT_DIR / "exercises" / "quiz.md",
-        CONTENT_DIR / "exercises" / "practical_defense.md",
-        CONTENT_DIR / "references.md",
+        scenario_dir / "README.md",
+        scenario_dir / "briefing.md",
+        scenario_dir / "team_structure" / "roles.md",
     ]
+    
+    # Add phase files if they exist
+    phases_dir = scenario_dir / "phases"
+    if phases_dir.exists():
+        for phase_file in sorted(phases_dir.glob("*.md")):
+            files_to_include.append(phase_file)
+    
+    # Add exercise files if they exist
+    exercises_dir = scenario_dir / "exercises"
+    if exercises_dir.exists():
+        for exercise_file in sorted(exercises_dir.glob("*.md")):
+            if exercise_file.name != "solutions":
+                files_to_include.append(exercise_file)
+    
+    # Add references if they exist
+    references_file = scenario_dir / "references.md"
+    if references_file.exists():
+        files_to_include.append(references_file)
     
     # Combine all Markdown content
     combined_md = ""
     for filepath in files_to_include:
-        if filepath.exists():
-            combined_md += read_markdown_file(filepath) + "\n\n---\n\n"
+        content = read_markdown_file(filepath)
+        if content:
+            combined_md += content + "\n\n---\n\n"
     
     # Convert to HTML
     html_content = convert_markdown_to_html(combined_md)
     
     # Insert into template
-    final_html = HTML_TEMPLATE.format(content=html_content)
+    final_html = HTML_TEMPLATE.format(
+        title=scenario['title'],
+        number=scenario['number'],
+        content=html_content
+    )
     
     # Write to output file
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+    output_file = OUTPUT_DIR / f"{scenario['id']}.html"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, 'w', encoding='utf-8') as f:
         f.write(final_html)
     
-    print(f"✓ Built: {OUTPUT_FILE}")
+    print(f"✓ Built: {scenario['title']}")
 
 if __name__ == "__main__":
-    build_scenario()
-    print("Build complete!")
+    print("Building Playa del Crimen scenarios...")
+    for scenario in SCENARIOS:
+        build_scenario(scenario)
+    print("\nBuild complete!")
