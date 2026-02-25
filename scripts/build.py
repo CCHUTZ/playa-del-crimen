@@ -39,6 +39,11 @@ SCENARIOS = [
         'id': '04_el_tren_fantasma',
         'title': 'El Tren Fantasma',
         'number': '04'
+    },
+    {
+        'id': '05_por_la_puerta_de_atras_uwu',
+        'title': 'Por la puerta de atrás uwu',
+        'number': '05'
     }
 ]
 
